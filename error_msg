@@ -1,0 +1,30 @@
+(sankey) PS G:\Shared drives\Lintelman Team Drive\DRIVE\reports\rpt_sankey> python run.py
+2025-01-20 13:00:28.792 WARNING streamlit.runtime.scriptrunner_utils.script_run_context: Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-01-20 13:00:29.422
+  Warning: to view this Streamlit app on a browser, run it with the following
+  command:
+
+    streamlit run run.py [ARGUMENTS]
+2025-01-20 13:00:29.423 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-01-20 13:00:29.425 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-01-20 13:00:29.426 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-01-20 13:00:29.426 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-01-20 13:00:29.427 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-01-20 13:00:29.428 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-01-20 13:00:29.435 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-01-20 13:00:29.437 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-01-20 13:00:29.437 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-01-20 13:00:29.439 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-01-20 13:00:29.441 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-01-20 13:00:29.442 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-01-20 13:00:29.443 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-01-20 13:00:29.444 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-01-20 13:00:29.445 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-01-20 13:00:29.445 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-01-20 13:00:29.571 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-01-20 13:00:29.572 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-01-20 13:00:29.573 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-01-20 13:00:29.573 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-01-20 13:00:29.600 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2025-01-20 13:00:29.601 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+(sankey) PS G:\Shared drives\Lintelman Team Drive\DRIVE\reports\rpt_sankey>
