@@ -1,162 +1,265 @@
 # src/data_preprocessing.py
 
 import streamlit as st
+import plotly.graph_objects as go
 import pandas as pd
-import altair as alt
+import numpy as np
 
-def create_automation_tracker():
-    # Initialize data
-    total_reports = 100
-    months = range(24)
-    data = []
+class AutomationTracker:
+    def __init__(self, total_reports=100, total_months=24):
+        self.total_reports = total_reports
+        self.total_months = total_months
 
-    # Create data for each month
-    for month in months:
-        # Calculate transitions based on month
-        webui = min(60, int((month / 23) * 60))  # Max 60% to Web UI
-        tableau = min(40, int((month / 23) * 40))  # Max 40% to Tableau
-        manual = total_reports - webui - tableau
+    def calculate_flows(self, current_month):
+        # No retirement in first 3 months (stakeholder discussions period)
+        if current_month < 3:
+            retirement_target = 0
+        else:
+            # Start small and gradually increase to max 15%
+            months_since_start = current_month - 3  # Months since retirement started
+            retirement_target = min(
+                int(self.total_reports * 0.15),  # Max 15% total retirement
+                int(months_since_start * (self.total_reports * 0.01))  # About 1% per month after start
+            )
 
-        data.append({
-            'Month': month + 1,
-            'Manual': manual,
-            'Web UI': webui,
-            'Tableau': tableau
-        })
+        # Calculate automation targets for remaining reports
+        remaining_reports = self.total_reports - retirement_target
 
-    return pd.DataFrame(data)
+        # Adjusted automation targets based on month
+        if current_month < 2:
+            # First 2 months: Planning and setup phase
+            webui_target = 0
+            tableau_target = 0
+        else:
+            # Calculate maximum automatable reports (70-80% of remaining reports)
+            max_automation = remaining_reports * 0.75  # Keeping 25% manual
+
+            # Progressive automation after month 2, but never more than 75% of remaining
+            webui_target = min(
+                int(max_automation * 0.6),  # 60% of automatable reports go to Web UI
+                int((current_month / self.total_months) * remaining_reports * 0.45)  # Gradual increase
+            )
+            tableau_target = min(
+                int(max_automation * 0.4),  # 40% of automatable reports go to Tableau
+                int((current_month / self.total_months) * remaining_reports * 0.30)  # Gradual increase
+            )
+
+        # Ensure we maintain at least 25% manual reports
+        total_automated = webui_target + tableau_target
+        max_allowed = int(remaining_reports * 0.75)  # Maximum 75% automation
+        if total_automated > max_allowed:
+            reduction_factor = max_allowed / total_automated
+            webui_target = int(webui_target * reduction_factor)
+            tableau_target = int(tableau_target * reduction_factor)
+
+        manual = self.total_reports - webui_target - tableau_target - retirement_target
+
+        # Calculate flows from the previous month
+        if current_month > 0:
+            prev_flows = self.calculate_flows(current_month - 1)
+            webui_flow = webui_target - prev_flows['webui']
+            tableau_flow = tableau_target - prev_flows['tableau']
+            retirement_flow = retirement_target - prev_flows['retired']
+        else:
+            webui_flow = 0
+            tableau_flow = 0
+            retirement_flow = 0
+
+        return {
+            'manual': manual,
+            'webui': webui_target,
+            'tableau': tableau_target,
+            'retired': retirement_target,
+            'manual_to_webui': webui_flow,
+            'manual_to_tableau': tableau_flow,
+            'manual_to_retired': retirement_flow
+        }
+
+    def create_sankey(self, current_month):
+        flows = self.calculate_flows(current_month)
+
+        # Define node labels with counts
+        label = [
+            f"Manual<br>({flows['manual']})",
+            f"Web UI<br>({flows['webui']})",
+            f"Tableau<br>({flows['tableau']})",
+            f"Retired<br>({flows['retired']})"
+        ]
+
+        # Define colors for nodes
+        color = ['#ef4444', '#22c55e', '#3b82f6', '#6b7280']  # Red, Green, Blue, Gray
+
+        # Create Sankey diagram
+        fig = go.Figure(data=[go.Sankey(
+            node = dict(
+                pad = 15,
+                thickness = 30,
+                line = dict(color = "black", width = 0.5),
+                label = label,
+                color = color,
+                x = [0.1, 0.9, 0.9, 0.9],  # Position nodes
+                y = [0.5, 0.3, 0.7, 0.9]   # Position nodes
+            ),
+            link = dict(
+                source = [0, 0, 0],  # Manual is source for all links
+                target = [1, 2, 3],  # Web UI, Tableau, and Retired are targets
+                value = [
+                    flows['manual_to_webui'],
+                    flows['manual_to_tableau'],
+                    flows['manual_to_retired']
+                ],
+                color = [
+                    'rgba(34, 197, 94, 0.5)',   # Semi-transparent green
+                    'rgba(59, 130, 246, 0.5)',  # Semi-transparent blue
+                    'rgba(107, 114, 128, 0.5)'  # Semi-transparent gray
+                ]
+            )
+        )])
+
+        # Add phase annotations
+        if current_month < 2:
+            phase_text = "Planning & Setup Phase"
+        elif current_month < 3:
+            phase_text = "Initial Automation Phase"
+        elif current_month == 3:
+            phase_text = "Beginning Retirement Process"
+        else:
+            phase_text = "Automation & Retirement in Progress"
+
+        fig.add_annotation(
+            text=phase_text,
+            xref="paper", yref="paper",
+            x=0, y=1,
+            showarrow=False,
+            font=dict(size=14)
+        )
+
+        # Update layout
+        fig.update_layout(
+            title_text=f"Report Automation Progress - Month {current_month + 1}",
+            font_size=16,
+            height=600
+        )
+
+        return fig
 
 def main():
-    st.title('Report Automation Tracker')
+    st.set_page_config(layout="wide")
+    st.title('Report Automation Progress Tracker')
 
-    # Create data
-    df = create_automation_tracker()
+    # Create tracker instance
+    tracker = AutomationTracker()
 
-    # Create month slider
-    month = st.slider('Select Month', 1, 24, 1)
+    # Add month slider
+    month = st.slider('Select Month', min_value=0, max_value=23, value=0, format="Month %d")
 
-    # Get data for selected month
-    current_data = df[df['Month'] == month].iloc[0]
+    # Create columns for metrics
+    col1, col2, col3, col4 = st.columns(4)
 
-    # Display metrics
-    col1, col2, col3 = st.columns(3)
+    # Calculate current and previous flows
+    current_flows = tracker.calculate_flows(month)
+    prev_flows = tracker.calculate_flows(max(0, month-1))
+
+    # Display metrics with deltas
     with col1:
         st.metric(
             "Manual Reports",
-            current_data['Manual'],
-            delta=-int(current_data['Manual'] - df[df['Month'] == max(1, month-1)].iloc[0]['Manual'])
+            current_flows['manual'],
+            delta=-1 * (prev_flows['manual'] - current_flows['manual']) if month > 0 else None,
+            delta_color="inverse"
         )
+
     with col2:
         st.metric(
             "Web UI Reports",
-            current_data['Web UI'],
-            delta=int(current_data['Web UI'] - df[df['Month'] == max(1, month-1)].iloc[0]['Web UI'])
+            current_flows['webui'],
+            delta=current_flows['manual_to_webui'] if month > 0 else None
         )
+
     with col3:
         st.metric(
             "Tableau Reports",
-            current_data['Tableau'],
-            delta=int(current_data['Tableau'] - df[df['Month'] == max(1, month-1)].iloc[0]['Tableau'])
+            current_flows['tableau'],
+            delta=current_flows['manual_to_tableau'] if month > 0 else None
         )
 
-    # Create Sankey diagram using Altair
-    source = []
-    target = []
-    value = []
-
-    # Add flows from Manual to Web UI and Tableau
-    prev_data = df[df['Month'] == max(1, month-1)].iloc[0]
-    webui_change = max(0, current_data['Web UI'] - prev_data['Web UI'])
-    tableau_change = max(0, current_data['Tableau'] - prev_data['Tableau'])
-
-    if webui_change > 0:
-        source.append('Manual')
-        target.append('Web UI')
-        value.append(webui_change)
-
-    if tableau_change > 0:
-        source.append('Manual')
-        target.append('Tableau')
-        value.append(tableau_change)
-
-    flow_df = pd.DataFrame({
-        'source': source,
-        'target': target,
-        'value': value
-    })
-
-    # Create nodes data
-    nodes_df = pd.DataFrame({
-        'node': ['Manual', 'Web UI', 'Tableau'],
-        'value': [current_data['Manual'], current_data['Web UI'], current_data['Tableau']]
-    })
-
-    # Create Altair chart
-    nodes = alt.Chart(nodes_df).mark_circle(size=1000).encode(
-        x=alt.X('node:N', axis=alt.Axis(title=None)),
-        y=alt.Y('node:N', axis=alt.Axis(title=None)),
-        color=alt.Color('node:N',
-            scale=alt.Scale(
-                domain=['Manual', 'Web UI', 'Tableau'],
-                range=['#ef4444', '#22c55e', '#3b82f6']
-            )
-        ),
-        tooltip=['node:N', 'value:Q']
-    )
-
-    # Add labels
-    labels = nodes.mark_text(
-        align='center',
-        baseline='middle',
-        dy=30,
-        fontSize=14
-    ).encode(
-        text='value:Q'
-    )
-
-    if len(flow_df) > 0:
-        flows = alt.Chart(flow_df).mark_line(opacity=0.5).encode(
-            x='source',
-            x2='target',
-            y='source',
-            y2='target',
-            strokeWidth=alt.value(30),
-            color=alt.Color('target:N',
-                scale=alt.Scale(
-                    domain=['Web UI', 'Tableau'],
-                    range=['#22c55e', '#3b82f6']
-                )
-            ),
-            tooltip=['source', 'target', 'value']
+    with col4:
+        st.metric(
+            "Retired Reports",
+            current_flows['retired'],
+            delta=current_flows['manual_to_retired'] if month > 0 else None
         )
-        chart = (flows + nodes + labels)
+
+    # Create and display Sankey diagram
+    fig = tracker.create_sankey(month)
+    st.plotly_chart(fig, use_container_width=True)
+
+    # Add project phase explanation
+    if month < 2:
+        st.info("Planning & Setup Phase: Team discussions and preparation")
+    elif month < 3:
+        st.info("Initial Automation Phase: Beginning automation process")
+    elif month == 3:
+        st.info("Retirement Process Begins: Starting stakeholder discussions for retirement")
     else:
-        chart = (nodes + labels)
+        retirement_percent = (current_flows['retired'] / tracker.total_reports) * 100
+        st.info(f"Current retirement progress: {retirement_percent:.1f}% of reports retired (max 15%)")
 
-    chart = chart.properties(
-        width=600,
-        height=400,
-        title=f'Report Automation Status - Month {month}'
-    ).configure_view(
-        strokeWidth=0
+    # Add progress chart
+    st.subheader('Overall Progress')
+    progress_data = []
+    for m in range(month + 1):
+        flows = tracker.calculate_flows(m)
+        progress_data.append({
+            'Month': m + 1,
+            'Manual': flows['manual'],
+            'Web UI': flows['webui'],
+            'Tableau': flows['tableau'],
+            'Retired': flows['retired']
+        })
+
+    progress_df = pd.DataFrame(progress_data)
+
+    # Plot progress using Plotly
+    progress_fig = go.Figure()
+    progress_fig.add_trace(go.Scatter(
+        x=progress_df['Month'],
+        y=progress_df['Manual'],
+        name='Manual',
+        fill='tonexty',
+        mode='lines',
+        line=dict(color='#ef4444')
+    ))
+    progress_fig.add_trace(go.Scatter(
+        x=progress_df['Month'],
+        y=progress_df['Web UI'],
+        name='Web UI',
+        fill='tonexty',
+        mode='lines',
+        line=dict(color='#22c55e')
+    ))
+    progress_fig.add_trace(go.Scatter(
+        x=progress_df['Month'],
+        y=progress_df['Tableau'],
+        name='Tableau',
+        fill='tonexty',
+        mode='lines',
+        line=dict(color='#3b82f6')
+    ))
+    progress_fig.add_trace(go.Scatter(
+        x=progress_df['Month'],
+        y=progress_df['Retired'],
+        name='Retired',
+        fill='tonexty',
+        mode='lines',
+        line=dict(color='#6b7280')
+    ))
+
+    progress_fig.update_layout(
+        title='Progress Over Time',
+        xaxis_title='Month',
+        yaxis_title='Number of Reports',
+        height=400
     )
 
-    st.altair_chart(chart, use_container_width=True)
-
-    # Show progress over time
-    st.subheader('Progress Over Time')
-    progress_chart = alt.Chart(df.melt('Month', var_name='Type', value_name='Reports')).mark_area().encode(
-        x='Month:Q',
-        y=alt.Y('Reports:Q', stack='zero'),
-        color=alt.Color('Type:N',
-            scale=alt.Scale(
-                domain=['Manual', 'Web UI', 'Tableau'],
-                range=['#ef4444', '#22c55e', '#3b82f6']
-            )
-        )
-    ).properties(
-        width=600,
-        height=300
-    )
-
-    st.altair_chart(progress_chart, use_container_width=True)
+    st.plotly_chart(progress_fig, use_container_width=True)
