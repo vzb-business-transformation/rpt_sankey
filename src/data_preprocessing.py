@@ -11,30 +11,60 @@ class AutomationTracker:
         self.total_months = total_months
 
     def calculate_flows(self, current_month):
-        # Calculate how many reports should be in each state for this month
-        webui_target = min(60, int((current_month / self.total_months) * 60))
-        tableau_target = min(40, int((current_month / self.total_months) * 40))
-        manual = self.total_reports - webui_target - tableau_target
-
-        # Calculate flows from the previous month
-        if current_month > 0:
-            prev_webui = min(60, int(((current_month - 1) / self.total_months) * 60))
-            prev_tableau = min(40, int(((current_month - 1) / self.total_months) * 40))
-            prev_manual = self.total_reports - prev_webui - prev_tableau
-
-            webui_flow = webui_target - prev_webui
-            tableau_flow = tableau_target - prev_tableau
+        # Calculate retirement target (starts at month 3, reaches 15% by month 19)
+        if current_month < 3:
+            retirement_target = 0
         else:
-            prev_manual = self.total_reports
+            months_since_start = current_month - 3
+            retirement_per_month = (self.total_reports * 0.15) / 16  # Spread 15% over 16 months
+            retirement_target = min(
+                int(self.total_reports * 0.15),  # Max 15%
+                int(months_since_start * retirement_per_month)
+            )
+
+        # Calculate remaining reports after retirement
+        remaining_reports = self.total_reports - retirement_target
+
+        # Ensure at least 25% stays manual
+        max_automation = int(remaining_reports * 0.75)
+
+        # Calculate automation targets
+        if current_month < 2:
+            # First 2 months: Planning phase
+            webui_target = 0
+            tableau_target = 0
+        else:
+            # Progressive automation, maintaining manual minimum
+            webui_target = min(
+                int(max_automation * 0.6),  # 60% of automatable goes to Web UI
+                int((current_month / self.total_months) * max_automation * 0.6)
+            )
+            tableau_target = min(
+                int(max_automation * 0.4),  # 40% of automatable goes to Tableau
+                int((current_month / self.total_months) * max_automation * 0.4)
+            )
+
+        manual = self.total_reports - webui_target - tableau_target - retirement_target
+
+        # Calculate flows from previous month
+        if current_month > 0:
+            prev_flows = self.calculate_flows(current_month - 1)
+            webui_flow = webui_target - prev_flows['webui']
+            tableau_flow = tableau_target - prev_flows['tableau']
+            retirement_flow = retirement_target - prev_flows['retired']
+        else:
             webui_flow = 0
             tableau_flow = 0
+            retirement_flow = 0
 
         return {
             'manual': manual,
             'webui': webui_target,
             'tableau': tableau_target,
+            'retired': retirement_target,
             'manual_to_webui': webui_flow,
-            'manual_to_tableau': tableau_flow
+            'manual_to_tableau': tableau_flow,
+            'manual_to_retired': retirement_flow
         }
 
     def create_sankey(self, current_month):
@@ -44,28 +74,57 @@ class AutomationTracker:
         label = [
             f"Manual<br>({flows['manual']})",
             f"Web UI<br>({flows['webui']})",
-            f"Tableau<br>({flows['tableau']})"
+            f"Tableau<br>({flows['tableau']})",
+            f"Retired<br>({flows['retired']})"
         ]
 
         # Define colors for nodes
-        color = ['#ef4444', '#22c55e', '#3b82f6']  # Red, Green, Blue
+        color = ['#ef4444', '#22c55e', '#3b82f6', '#6b7280']  # Red, Green, Blue, Gray
 
-        # Create Sankey diagram
+        # Create Sankey diagram with specified node positions
         fig = go.Figure(data=[go.Sankey(
             node = dict(
                 pad = 15,
                 thickness = 30,
                 line = dict(color = "black", width = 0.5),
                 label = label,
-                color = color
+                color = color,
+                x = [0.1, 0.9, 0.9, 0.5],    # Manual, Web UI, Tableau, Retired
+                y = [0.5, 0.2, 0.8, 1.0]     # Spread out vertically
             ),
             link = dict(
-                source = [0, 0],  # Manual is source for both links
-                target = [1, 2],  # Web UI and Tableau are targets
-                value = [flows['manual_to_webui'], flows['manual_to_tableau']],
-                color = ['rgba(34, 197, 94, 0.5)', 'rgba(59, 130, 246, 0.5)']  # Semi-transparent green and blue
+                source = [0, 0, 0],  # Manual is source for all links
+                target = [1, 2, 3],  # Web UI, Tableau, and Retired are targets
+                value = [
+                    flows['manual_to_webui'],
+                    flows['manual_to_tableau'],
+                    flows['manual_to_retired']
+                ],
+                color = [
+                    'rgba(34, 197, 94, 0.5)',   # Semi-transparent green
+                    'rgba(59, 130, 246, 0.5)',  # Semi-transparent blue
+                    'rgba(107, 114, 128, 0.5)'  # Semi-transparent gray
+                ]
             )
         )])
+
+        # Add phase annotations
+        if current_month < 2:
+            phase_text = "Planning & Setup Phase"
+        elif current_month < 3:
+            phase_text = "Initial Automation Phase"
+        elif current_month == 3:
+            phase_text = "Beginning Retirement Process"
+        else:
+            phase_text = "Automation & Retirement in Progress"
+
+        fig.add_annotation(
+            text=phase_text,
+            xref="paper", yref="paper",
+            x=0, y=1.1,
+            showarrow=False,
+            font=dict(size=14)
+        )
 
         # Update layout
         fig.update_layout(
@@ -87,7 +146,7 @@ def main():
     month = st.slider('Select Month', min_value=0, max_value=23, value=0, format="Month %d")
 
     # Create columns for metrics
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
 
     # Calculate current and previous flows
     current_flows = tracker.calculate_flows(month)
@@ -116,6 +175,13 @@ def main():
             delta=current_flows['manual_to_tableau'] if month > 0 else None
         )
 
+    with col4:
+        st.metric(
+            "Retired Reports",
+            current_flows['retired'],
+            delta=current_flows['manual_to_retired'] if month > 0 else None
+        )
+
     # Create and display Sankey diagram
     fig = tracker.create_sankey(month)
     st.plotly_chart(fig, use_container_width=True)
@@ -129,7 +195,8 @@ def main():
             'Month': m + 1,
             'Manual': flows['manual'],
             'Web UI': flows['webui'],
-            'Tableau': flows['tableau']
+            'Tableau': flows['tableau'],
+            'Retired': flows['retired']
         })
 
     progress_df = pd.DataFrame(progress_data)
@@ -159,6 +226,14 @@ def main():
         fill='tonexty',
         mode='lines',
         line=dict(color='#3b82f6')
+    ))
+    progress_fig.add_trace(go.Scatter(
+        x=progress_df['Month'],
+        y=progress_df['Retired'],
+        name='Retired',
+        fill='tonexty',
+        mode='lines',
+        line=dict(color='#6b7280')
     ))
 
     progress_fig.update_layout(
