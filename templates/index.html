@@ -1,5 +1,4 @@
 <!-- templates/index.html -->
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -35,18 +34,26 @@
             </div>
         </div>
 
+        <div class="timeline-context-container">
+            <p id="timeline-context" class="timeline-context">Data showing current state</p>
+        </div>
+
         <div class="stats-bar">
             <div class="stat-item">
                 <div class="stat-label">Total Reports</div>
                 <div id="total-reports" class="stat-value">0</div>
             </div>
             <div class="stat-item">
-                <div class="stat-label">Fully Automated</div>
-                <div id="automated-reports" class="stat-value">0 (0%)</div>
+                <div class="stat-label">Fully</div>
+                <div id="fully-reports" class="stat-value">0 (0%)</div>
             </div>
             <div class="stat-item">
-                <div class="stat-label">Self Service</div>
-                <div id="self-service-reports" class="stat-value">0 (0%)</div>
+                <div class="stat-label">Semi</div>
+                <div id="semi-reports" class="stat-value">0 (0%)</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Tableau</div>
+                <div id="tableau-reports" class="stat-value">0 (0%)</div>
             </div>
             <div class="stat-item">
                 <div class="stat-label">Manual</div>
@@ -56,13 +63,8 @@
 
         <div id="sankey-container"></div>
 
-        <div id="report-panel">
-            <div class="panel-header">
-                <h3 id="panel-title">Reports</h3>
-                <span class="close-btn" onclick="document.getElementById('report-panel').style.display='none'">×</span>
-            </div>
-            <ul id="report-list"></ul>
-        </div>
+        <!-- New Reports List Section -->
+        <div id="reports-list-container" class="reports-section"></div>
     </div>
 
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>

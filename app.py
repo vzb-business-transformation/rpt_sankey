@@ -362,8 +362,9 @@ def get_sankey():
     # Get reports for each node
     node_reports = {}
 
-    # Get all automation levels for direct access
-    automation_levels = ['Fully Automated', 'Self Service', 'Manual']
+    # Get actual automation levels from data
+    automation_levels = list(set([i for i in df['automation_level']]))
+    # Should be ['Manual', 'Semi', 'Fully', 'Tableau']
 
     for node_name in all_nodes:
         node_idx = node_indices[node_name]
@@ -383,14 +384,23 @@ def get_sankey():
         elif node_name in df['delivery_schedule'].values:
             node_reports[node_idx] = df[df['delivery_schedule'] == node_name]['report_name'].tolist()
 
+    # Check each automation level exists in filtered_df
+    auto_breakdown = {}
+    for level in automation_levels:
+        count = len(filtered_df[filtered_df['automation_level'] == level])
+        auto_breakdown[level] = count
+
+        # Ensure we include nodes for all automation levels in the response, even if 0 reports
+        if level not in all_nodes:
+            # Find index for this level if it's in node_indices
+            if level in node_indices:
+                idx = node_indices[level]
+                node_reports[idx] = []
+
     # Add summary statistics
     stats = {
         "total_reports": len(filtered_df),
-        "automation_breakdown": {
-            "Fully Automated": len(filtered_df[filtered_df['automation_level'] == 'Fully Automated']),
-            "Self Service": len(filtered_df[filtered_df['automation_level'] == 'Self Service']),
-            "Manual": len(filtered_df[filtered_df['automation_level'] == 'Manual']),
-        }
+        "automation_breakdown": auto_breakdown
     }
 
     # Add custom data to the response

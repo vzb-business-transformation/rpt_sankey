@@ -1,11 +1,11 @@
 // static/js/script.js
-// static/js/script.js
 $(document).ready(function() {
     // State variables
     let nodeData = {};
     let nodeReports = {};
     let linkReports = {};
     let animationInterval = null;
+    let currentReports = []; // Store current selected reports
 
     // Load owners for dropdown
     $.get('/get_owners', function(data) {
@@ -67,10 +67,20 @@ $(document).ready(function() {
         // Show loading indicator
         $('#sankey-container').html('<div class="loading">Loading diagram...</div>');
 
+        // Clear the reports list when loading new data
+        $('#reports-list-container').empty();
+
         const selectedOwner = $('#owner-select').val();
         const selectedTimeBtn = $('.time-btn.active');
         const quarter = selectedTimeBtn.data('quarter');
         const year = selectedTimeBtn.data('year');
+
+        // Update timeline context if selected
+        if (quarter && year) {
+            $('#timeline-context').text(`Data showing projection for Q${quarter} ${year}`);
+        } else {
+            $('#timeline-context').text('Data showing current state');
+        }
 
         $.get('/get_sankey', {
             owner: selectedOwner,
@@ -104,9 +114,10 @@ $(document).ready(function() {
     // Update stats using direct data from server
     function updateStats(stats) {
         const totalReports = stats.total_reports;
-        const automatedCount = stats.automation_breakdown["Fully Automated"];
-        const selfServiceCount = stats.automation_breakdown["Self Service"];
-        const manualCount = stats.automation_breakdown["Manual"];
+        const fullyCount = stats.automation_breakdown["Fully"] || 0;
+        const semiCount = stats.automation_breakdown["Semi"] || 0;
+        const tableauCount = stats.automation_breakdown["Tableau"] || 0;
+        const manualCount = stats.automation_breakdown["Manual"] || 0;
 
         // Apply transition effect
         $('.stat-value').addClass('changing');
@@ -114,12 +125,14 @@ $(document).ready(function() {
         // Update the stats display
         $('#total-reports').text(totalReports);
 
-        const automatedPct = totalReports > 0 ? Math.round((automatedCount / totalReports) * 100) : 0;
-        const selfServicePct = totalReports > 0 ? Math.round((selfServiceCount / totalReports) * 100) : 0;
+        const fullyPct = totalReports > 0 ? Math.round((fullyCount / totalReports) * 100) : 0;
+        const semiPct = totalReports > 0 ? Math.round((semiCount / totalReports) * 100) : 0;
+        const tableauPct = totalReports > 0 ? Math.round((tableauCount / totalReports) * 100) : 0;
         const manualPct = totalReports > 0 ? Math.round((manualCount / totalReports) * 100) : 0;
 
-        $('#automated-reports').text(`${automatedCount} (${automatedPct}%)`);
-        $('#self-service-reports').text(`${selfServiceCount} (${selfServicePct}%)`);
+        $('#fully-reports').text(`${fullyCount} (${fullyPct}%)`);
+        $('#semi-reports').text(`${semiCount} (${semiPct}%)`);
+        $('#tableau-reports').text(`${tableauCount} (${tableauPct}%)`);
         $('#manual-reports').text(`${manualCount} (${manualPct}%)`);
 
         // Remove transition effect
@@ -142,28 +155,31 @@ $(document).ready(function() {
         // Map automation levels to their node indices
         for (const nodeIndex in nodeData) {
             const nodeName = nodeData[nodeIndex];
-            if (nodeName === 'Fully Automated' || nodeName === 'Self Service' || nodeName === 'Manual') {
+            if (nodeName === 'Fully' || nodeName === 'Semi' || nodeName === 'Tableau' || nodeName === 'Manual') {
                 automationNodes[nodeName] = nodeIndex;
             }
         }
 
         // Count reports for each automation level
-        const fullyAutomatedReports = nodeReports[automationNodes['Fully Automated']] || [];
-        const selfServiceReports = nodeReports[automationNodes['Self Service']] || [];
+        const fullyReports = nodeReports[automationNodes['Fully']] || [];
+        const semiReports = nodeReports[automationNodes['Semi']] || [];
+        const tableauReports = nodeReports[automationNodes['Tableau']] || [];
         const manualReports = nodeReports[automationNodes['Manual']] || [];
 
         // Calculate total reports
         const allReports = new Set([
-            ...fullyAutomatedReports,
-            ...selfServiceReports,
+            ...fullyReports,
+            ...semiReports,
+            ...tableauReports,
             ...manualReports
         ]);
 
         const stats = {
             total_reports: allReports.size,
             automation_breakdown: {
-                "Fully Automated": fullyAutomatedReports.length,
-                "Self Service": selfServiceReports.length,
+                "Fully": fullyReports.length,
+                "Semi": semiReports.length,
+                "Tableau": tableauReports.length,
                 "Manual": manualReports.length
             }
         };
@@ -176,10 +192,6 @@ $(document).ready(function() {
         if (!data || !data.points || data.points.length === 0) return;
 
         const point = data.points[0];
-        const panel = document.getElementById('report-panel');
-        const panelTitle = document.getElementById('panel-title');
-        const reportList = document.getElementById('report-list');
-
         let reports = [];
         let title = '';
 
@@ -200,32 +212,56 @@ $(document).ready(function() {
             reports = linkReports[`${sourceIndex}-${targetIndex}`] || [];
         }
 
-        // Populate and show the panel
-        panelTitle.textContent = title;
-        reportList.innerHTML = '';
+        // Store current reports
+        currentReports = reports;
+
+        // Display reports below chart
+        displayReportsList(title, reports);
+    }
+
+    // Display reports in the reports list container
+    function displayReportsList(title, reports) {
+        const container = $('#reports-list-container');
+        container.empty();
+
+        // Create section title
+        const sectionTitle = $('<h3>').text(title);
+        container.append(sectionTitle);
 
         if (!reports || reports.length === 0) {
-            reportList.innerHTML = '<li>No reports found</li>';
-        } else {
-            reports.forEach(report => {
-                const li = document.createElement('li');
-                li.textContent = report;
-                li.onclick = function() {
-                    showReportDetails(report, li);
-                };
-                reportList.appendChild(li);
-            });
+            container.append($('<p>').text('No reports found'));
+            return;
         }
 
-        panel.style.display = 'block';
-        panel.classList.add('fade-in');
+        // Create reports list
+        const list = $('<ul class="reports-list"></ul>');
+        reports.forEach(report => {
+            const item = $('<li>').text(report);
+            item.click(function() {
+                // Remove previous selection
+                $('.reports-list li').removeClass('selected');
+                // Add selection to current item
+                $(this).addClass('selected');
+                // Show details
+                showReportDetails(report, item);
+            });
+            list.append(item);
+        });
+
+        container.append(list);
+
+        // Add details container
+        const detailsContainer = $('<div id="report-details-container"></div>');
+        container.append(detailsContainer);
+
+        // Scroll to reports container
+        $('html, body').animate({
+            scrollTop: container.offset().top - 20
+        }, 500);
     }
 
     // Function to show detailed information about a report
     function showReportDetails(reportName, element) {
-        // Remove any existing details
-        $('.report-details').remove();
-
         // Get report details from the API
         $.get('/get_report_details', { report_name: reportName }, function(data) {
             if (data.error) {
@@ -234,20 +270,49 @@ $(document).ready(function() {
             }
 
             const report = data.report;
-            const detailsDiv = document.createElement('div');
-            detailsDiv.className = 'report-details fade-in';
+            const detailsContainer = $('#report-details-container');
+            detailsContainer.empty();
 
-            detailsDiv.innerHTML = `
-                <p><strong>Data Source:</strong> <span>${report.data_source}</span></p>
-                <p><strong>Owner:</strong> <span>${report.report_owner}</span></p>
-                <p><strong>Stakeholder:</strong> <span>${report.stakeholder}</span></p>
-                <p><strong>Program:</strong> <span>${report.program || 'N/A'}</span></p>
-                <p><strong>Output Type:</strong> <span>${report.output_type}</span></p>
-                <p><strong>Automation:</strong> <span>${report.automation_level}</span></p>
-                <p><strong>Delivery:</strong> <span>${report.delivery_schedule}</span></p>
+            const detailsBox = $('<div class="report-details-box"></div>');
+
+            // Create details content
+            const content = `
+                <h4>${reportName}</h4>
+                <div class="details-grid">
+                    <div class="detail-row">
+                        <div class="detail-label">Data Source:</div>
+                        <div class="detail-value">${report.data_source}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Owner:</div>
+                        <div class="detail-value">${report.report_owner}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Stakeholder:</div>
+                        <div class="detail-value">${report.stakeholder}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Program:</div>
+                        <div class="detail-value">${report.program || 'N/A'}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Output Type:</div>
+                        <div class="detail-value">${report.output_type}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Automation:</div>
+                        <div class="detail-value">${report.automation_level}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Delivery:</div>
+                        <div class="detail-value">${report.delivery_schedule}</div>
+                    </div>
+                </div>
             `;
 
-            element.appendChild(detailsDiv);
+            detailsBox.html(content);
+            detailsContainer.append(detailsBox);
+            detailsBox.addClass('fade-in');
         });
     }
 });
