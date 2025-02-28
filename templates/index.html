@@ -1,0 +1,70 @@
+<!-- templates/index.html -->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Reporting Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Reporting Management Dashboard</h1>
+
+        <div class="controls">
+            <div class="filter-section">
+                <label for="owner-select">Filter by Owner:</label>
+                <select id="owner-select">
+                    <option value="All Owners">All Owners</option>
+                </select>
+            </div>
+
+            <div class="animation-section">
+                <label>Roadmap Projection:</label>
+                <div class="btn-group">
+                    <button class="time-btn active" data-quarter="" data-year="">Current</button>
+                    <button class="time-btn" data-quarter="1" data-year="2025">Q1 2025</button>
+                    <button class="time-btn" data-quarter="2" data-year="2025">Q2 2025</button>
+                    <button class="time-btn" data-quarter="3" data-year="2025">Q3 2025</button>
+                    <button class="time-btn" data-quarter="4" data-year="2025">Q4 2025</button>
+                    <button class="time-btn" data-quarter="1" data-year="2026">Q1 2026</button>
+                    <button class="time-btn" data-quarter="2" data-year="2026">Q2 2026</button>
+                </div>
+                <button id="play-animation" class="play-btn">▶ Play Animation</button>
+            </div>
+        </div>
+
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="stat-label">Total Reports</div>
+                <div id="total-reports" class="stat-value">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Fully Automated</div>
+                <div id="automated-reports" class="stat-value">0 (0%)</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Self Service</div>
+                <div id="self-service-reports" class="stat-value">0 (0%)</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Manual</div>
+                <div id="manual-reports" class="stat-value">0 (0%)</div>
+            </div>
+        </div>
+
+        <div id="sankey-container"></div>
+
+        <div id="report-panel">
+            <div class="panel-header">
+                <h3 id="panel-title">Reports</h3>
+                <span class="close-btn" onclick="document.getElementById('report-panel').style.display='none'">×</span>
+            </div>
+            <ul id="report-list"></ul>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
