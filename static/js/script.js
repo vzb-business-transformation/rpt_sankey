@@ -5,7 +5,6 @@ $(document).ready(function() {
     let nodeReports = {};
     let linkReports = {};
     let animationInterval = null;
-    let currentData = null;
 
     // Load owners for dropdown
     $.get('/get_owners', function(data) {
@@ -64,6 +63,9 @@ $(document).ready(function() {
 
     // Function to load the Sankey diagram
     function loadSankey() {
+        // Show loading indicator
+        $('#sankey-container').html('<div class="loading">Loading diagram...</div>');
+
         const selectedOwner = $('#owner-select').val();
         const selectedTimeBtn = $('.time-btn.active');
         const quarter = selectedTimeBtn.data('quarter');
@@ -74,8 +76,6 @@ $(document).ready(function() {
             quarter: quarter,
             year: year
         }, function(data) {
-            currentData = data;
-
             // Store the node and link data
             nodeData = data.node_data;
             nodeReports = data.node_reports;
@@ -86,47 +86,29 @@ $(document).ready(function() {
             Plotly.newPlot('sankey-container', figure.data, figure.layout);
 
             // Add click event listener
-            document.getElementById('sankey-container').on('plotly_click', function(data) {
-                handlePlotlyClick(data);
+            document.getElementById('sankey-container').on('plotly_click', function(clickData) {
+                handlePlotlyClick(clickData);
             });
 
-            // Update statistics
-            updateStats(figure, nodeReports);
+            // Update statistics directly from the data
+            if (data.stats) {
+                updateStats(data.stats);
+            } else {
+                // Fallback to counting reports if stats not provided by server
+                countReportsFromNodeData();
+            }
         });
     }
 
-    // Function to update statistics - FIXED
-    function updateStats(figure, nodeReports) {
-        if (!figure || !figure.data || !figure.data[0]) return;
+    // Update stats using direct data from server
+    function updateStats(stats) {
+        const totalReports = stats.total_reports;
+        const automatedCount = stats.automation_breakdown["Fully Automated"];
+        const selfServiceCount = stats.automation_breakdown["Self Service"];
+        const manualCount = stats.automation_breakdown["Manual"];
 
-        const sankeyData = figure.data[0];
-
-        // Find indices of automation levels
-        let automationIndices = {};
-
-        // Map node labels to their indices
-        sankeyData.node.label.forEach((label, index) => {
-            if (label === 'Fully Automated' || label === 'Self Service' || label === 'Manual') {
-                automationIndices[label] = index;
-            }
-        });
-
-        // Count the reports by looking at the node reports data
-        const fullyAutomatedReports = nodeReports[automationIndices['Fully Automated']] || [];
-        const selfServiceReports = nodeReports[automationIndices['Self Service']] || [];
-        const manualReports = nodeReports[automationIndices['Manual']] || [];
-
-        // Total report count - add unique reports from all automation levels
-        const allReports = new Set([
-            ...(fullyAutomatedReports || []),
-            ...(selfServiceReports || []),
-            ...(manualReports || [])
-        ]);
-
-        const totalReports = allReports.size;
-        const automatedCount = fullyAutomatedReports.length;
-        const selfServiceCount = selfServiceReports.length;
-        const manualCount = manualReports.length;
+        // Apply transition effect
+        $('.stat-value').addClass('changing');
 
         // Update the stats display
         $('#total-reports').text(totalReports);
@@ -139,11 +121,53 @@ $(document).ready(function() {
         $('#self-service-reports').text(`${selfServiceCount} (${selfServicePct}%)`);
         $('#manual-reports').text(`${manualCount} (${manualPct}%)`);
 
-        // Add highlight animation when values change
+        // Remove transition effect
+        setTimeout(() => {
+            $('.stat-value').removeClass('changing');
+        }, 500);
+
+        // Add highlight animation
         $('.stat-value').addClass('highlight');
         setTimeout(() => {
             $('.stat-value').removeClass('highlight');
         }, 1500);
+    }
+
+    // Fallback function to count reports if server doesn't provide stats
+    function countReportsFromNodeData() {
+        // Find automation level nodes
+        let automationNodes = {};
+
+        // Map automation levels to their node indices
+        for (const nodeIndex in nodeData) {
+            const nodeName = nodeData[nodeIndex];
+            if (nodeName === 'Fully Automated' || nodeName === 'Self Service' || nodeName === 'Manual') {
+                automationNodes[nodeName] = nodeIndex;
+            }
+        }
+
+        // Count reports for each automation level
+        const fullyAutomatedReports = nodeReports[automationNodes['Fully Automated']] || [];
+        const selfServiceReports = nodeReports[automationNodes['Self Service']] || [];
+        const manualReports = nodeReports[automationNodes['Manual']] || [];
+
+        // Calculate total reports
+        const allReports = new Set([
+            ...fullyAutomatedReports,
+            ...selfServiceReports,
+            ...manualReports
+        ]);
+
+        const stats = {
+            total_reports: allReports.size,
+            automation_breakdown: {
+                "Fully Automated": fullyAutomatedReports.length,
+                "Self Service": selfServiceReports.length,
+                "Manual": manualReports.length
+            }
+        };
+
+        updateStats(stats);
     }
 
     // Function to handle clicks on the Sankey diagram
@@ -179,7 +203,7 @@ $(document).ready(function() {
         panelTitle.textContent = title;
         reportList.innerHTML = '';
 
-        if (reports.length === 0) {
+        if (!reports || reports.length === 0) {
             reportList.innerHTML = '<li>No reports found</li>';
         } else {
             reports.forEach(report => {
@@ -225,4 +249,3 @@ $(document).ready(function() {
             element.appendChild(detailsDiv);
         });
     }
-});
