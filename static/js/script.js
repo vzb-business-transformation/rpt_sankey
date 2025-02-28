@@ -1,5 +1,4 @@
 // static/js/script.js
-
 $(document).ready(function() {
     // State variables
     let nodeData = {};
@@ -92,59 +91,53 @@ $(document).ready(function() {
             });
 
             // Update statistics
-            updateStats(figure);
+            updateStats(figure, nodeReports);
         });
     }
 
-    // Function to update statistics
-    function updateStats(figure) {
+    // Function to update statistics - FIXED
+    function updateStats(figure, nodeReports) {
         if (!figure || !figure.data || !figure.data[0]) return;
 
         const sankeyData = figure.data[0];
 
         // Find indices of automation levels
-        let automationIndices = [];
-        let automationLabelMap = {};
+        let automationIndices = {};
 
+        // Map node labels to their indices
         sankeyData.node.label.forEach((label, index) => {
             if (label === 'Fully Automated' || label === 'Self Service' || label === 'Manual') {
-                automationIndices.push(index);
-                automationLabelMap[label] = index;
+                automationIndices[label] = index;
             }
         });
 
-        // Count reports by automation level
-        let totalReports = 0;
-        let automatedReports = 0;
-        let selfServiceReports = 0;
-        let manualReports = 0;
+        // Count the reports by looking at the node reports data
+        const fullyAutomatedReports = nodeReports[automationIndices['Fully Automated']] || [];
+        const selfServiceReports = nodeReports[automationIndices['Self Service']] || [];
+        const manualReports = nodeReports[automationIndices['Manual']] || [];
 
-        // Count outgoing links from automation nodes to get total reports
-        sankeyData.link.source.forEach((source, index) => {
-            if (automationIndices.includes(source)) {
-                const value = sankeyData.link.value[index];
-                totalReports += value;
+        // Total report count - add unique reports from all automation levels
+        const allReports = new Set([
+            ...(fullyAutomatedReports || []),
+            ...(selfServiceReports || []),
+            ...(manualReports || [])
+        ]);
 
-                if (source === automationLabelMap['Fully Automated']) {
-                    automatedReports += value;
-                } else if (source === automationLabelMap['Self Service']) {
-                    selfServiceReports += value;
-                } else if (source === automationLabelMap['Manual']) {
-                    manualReports += value;
-                }
-            }
-        });
+        const totalReports = allReports.size;
+        const automatedCount = fullyAutomatedReports.length;
+        const selfServiceCount = selfServiceReports.length;
+        const manualCount = manualReports.length;
 
         // Update the stats display
         $('#total-reports').text(totalReports);
 
-        const automatedPct = totalReports > 0 ? Math.round((automatedReports / totalReports) * 100) : 0;
-        const selfServicePct = totalReports > 0 ? Math.round((selfServiceReports / totalReports) * 100) : 0;
-        const manualPct = totalReports > 0 ? Math.round((manualReports / totalReports) * 100) : 0;
+        const automatedPct = totalReports > 0 ? Math.round((automatedCount / totalReports) * 100) : 0;
+        const selfServicePct = totalReports > 0 ? Math.round((selfServiceCount / totalReports) * 100) : 0;
+        const manualPct = totalReports > 0 ? Math.round((manualCount / totalReports) * 100) : 0;
 
-        $('#automated-reports').text(`${automatedReports} (${automatedPct}%)`);
-        $('#self-service-reports').text(`${selfServiceReports} (${selfServicePct}%)`);
-        $('#manual-reports').text(`${manualReports} (${manualPct}%)`);
+        $('#automated-reports').text(`${automatedCount} (${automatedPct}%)`);
+        $('#self-service-reports').text(`${selfServiceCount} (${selfServicePct}%)`);
+        $('#manual-reports').text(`${manualCount} (${manualPct}%)`);
 
         // Add highlight animation when values change
         $('.stat-value').addClass('highlight');
