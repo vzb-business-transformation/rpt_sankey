@@ -1,30 +1,78 @@
-(sankey) PS G:\Shared drives\Lintelman Team Drive\DRIVE\reports\rpt_sankey> python run.py
-2025-01-20 13:00:28.792 WARNING streamlit.runtime.scriptrunner_utils.script_run_context: Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
-2025-01-20 13:00:29.422
-  Warning: to view this Streamlit app on a browser, run it with the following
-  command:
+ * Running on http://63.25.164.225:5008/ (Press CTRL+C to quit)
+63.14.8.151 - - [28/Feb/2025 17:22:16] "GET / HTTP/1.1" 200 -
+63.14.8.151 - - [28/Feb/2025 17:22:16] "GET /static/js/script.js HTTP/1.1" 200 -
+63.14.8.151 - - [28/Feb/2025 17:22:16] "GET /static/css/style.css HTTP/1.1" 304 -
+63.14.8.151 - - [28/Feb/2025 17:22:16] "GET /get_owners HTTP/1.1" 200 -
+63.14.8.151 - - [28/Feb/2025 17:22:16] "GET /get_sankey?owner=All%20Owners&quarter=&year= HTTP/1.1" 500 -
+Traceback (most recent call last):
+  File "C:\Users\sriwope\AppData\Local\Miniconda39\envs\sankey\Lib\site-packages\flask\app.py", line 2088, in __call__
+    return self.wsgi_app(environ, start_response)
+  File "C:\Users\sriwope\AppData\Local\Miniconda39\envs\sankey\Lib\site-packages\flask\app.py", line 2073, in wsgi_app
+    response = self.handle_exception(e)
+  File "C:\Users\sriwope\AppData\Local\Miniconda39\envs\sankey\Lib\site-packages\flask\app.py", line 2070, in wsgi_app
+    response = self.full_dispatch_request()
+  File "C:\Users\sriwope\AppData\Local\Miniconda39\envs\sankey\Lib\site-packages\flask\app.py", line 1515, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "C:\Users\sriwope\AppData\Local\Miniconda39\envs\sankey\Lib\site-packages\flask\app.py", line 1513, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "C:\Users\sriwope\AppData\Local\Miniconda39\envs\sankey\Lib\site-packages\flask\app.py", line 1499, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**req.view_args)
+  File "G:\Shared drives\Lintelman Team Drive\DRIVE\project\rpt_sankey\app.py", line 347, in get_sankey
+    fig, all_nodes, link_reports, node_indices = create_sankey(df, selected_owner, quarter, year)
+  File "G:\Shared drives\Lintelman Team Drive\DRIVE\project\rpt_sankey\app.py", line 78, in create_sankey
+    filtered_df = apply_transformation(filtered_df, quarter, year)
+  File "G:\Shared drives\Lintelman Team Drive\DRIVE\project\rpt_sankey\app.py", line 40, in apply_transformation
+    quarters_from_start = (year - 2025) * 4 + quarter
+TypeError: unsupported operand type(s) for -: 'str' and 'int'
+63.14.8.151 - - [28/Feb/2025 17:22:21] "GET /get_sankey?owner=All%20Owners&quarter=&year= HTTP/1.1" 500 -
+Traceback (most recent call last):
+  File "C:\Users\sriwope\AppData\Local\Miniconda39\envs\sankey\Lib\site-packages\flask\app.py", line 2088, in __call__
+    return self.wsgi_app(environ, start_response)
+  File "C:\Users\sriwope\AppData\Local\Miniconda39\envs\sankey\Lib\site-packages\flask\app.py", line 2073, in wsgi_app
+    response = self.handle_exception(e)
+  File "C:\Users\sriwope\AppData\Local\Miniconda39\envs\sankey\Lib\site-packages\flask\app.py", line 2070, in wsgi_app
+    response = self.full_dispatch_request()
+  File "C:\Users\sriwope\AppData\Local\Miniconda39\envs\sankey\Lib\site-packages\flask\app.py", line 1515, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "C:\Users\sriwope\AppData\Local\Miniconda39\envs\sankey\Lib\site-packages\flask\app.py", line 1513, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "C:\Users\sriwope\AppData\Local\Miniconda39\envs\sankey\Lib\site-packages\flask\app.py", line 1499, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**req.view_args)
+  File "G:\Shared drives\Lintelman Team Drive\DRIVE\project\rpt_sankey\app.py", line 347, in get_sankey
+    fig, all_nodes, link_reports, node_indices = create_sankey(df, selected_owner, quarter, year)
+  File "G:\Shared drives\Lintelman Team Drive\DRIVE\project\rpt_sankey\app.py", line 78, in create_sankey
+    filtered_df = apply_transformation(filtered_df, quarter, year)
+  File "G:\Shared drives\Lintelman Team Drive\DRIVE\project\rpt_sankey\app.py", line 40, in apply_transformation
+    quarters_from_start = (year - 2025) * 4 + quarter
+TypeError: unsupported operand type(s) for -: 'str' and 'int'
+63.14.8.151 - - [28/Feb/2025 17:22:24] "GET /get_sankey?owner=All%20Owners&quarter=1&year=2025 HTTP/1.1" 200 -
+63.14.8.151 - - [28/Feb/2025 17:22:24] "GET /get_sankey?owner=All%20Owners&quarter=1&year=2025 HTTP/1.1" 200 -
+63.14.8.151 - - [28/Feb/2025 17:22:24] "GET /get_sankey?owner=All%20Owners&quarter=2&year=2025 HTTP/1.1" 200 -
+63.14.8.151 - - [28/Feb/2025 17:22:26] "GET /get_sankey?owner=All%20Owners&quarter=2&year=2025 HTTP/1.1" 200 -
+63.14.8.151 - - [28/Feb/2025 17:22:28] "GET /get_sankey?owner=All%20Owners&quarter=3&year=2025 HTTP/1.1" 200 -
+63.14.8.151 - - [28/Feb/2025 17:22:30] "GET /get_sankey?owner=All%20Owners&quarter=4&year=2025 HTTP/1.1" 200 -
+63.14.8.151 - - [28/Feb/2025 17:22:32] "GET /get_sankey?owner=All%20Owners&quarter=1&year=2026 HTTP/1.1" 200 -
+63.14.8.151 - - [28/Feb/2025 17:22:34] "GET /get_sankey?owner=All%20Owners&quarter=2&year=2026 HTTP/1.1" 200 -
+63.14.8.151 - - [28/Feb/2025 17:22:43] "GET /get_sankey?owner=All%20Owners&quarter=&year= HTTP/1.1" 500 -
+Traceback (most recent call last):
+  File "C:\Users\sriwope\AppData\Local\Miniconda39\envs\sankey\Lib\site-packages\flask\app.py", line 2088, in __call__
+    return self.wsgi_app(environ, start_response)
+  File "C:\Users\sriwope\AppData\Local\Miniconda39\envs\sankey\Lib\site-packages\flask\app.py", line 2073, in wsgi_app
+    response = self.handle_exception(e)
+  File "C:\Users\sriwope\AppData\Local\Miniconda39\envs\sankey\Lib\site-packages\flask\app.py", line 2070, in wsgi_app
+    response = self.full_dispatch_request()
+  File "C:\Users\sriwope\AppData\Local\Miniconda39\envs\sankey\Lib\site-packages\flask\app.py", line 1515, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "C:\Users\sriwope\AppData\Local\Miniconda39\envs\sankey\Lib\site-packages\flask\app.py", line 1513, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "C:\Users\sriwope\AppData\Local\Miniconda39\envs\sankey\Lib\site-packages\flask\app.py", line 1499, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**req.view_args)
+  File "G:\Shared drives\Lintelman Team Drive\DRIVE\project\rpt_sankey\app.py", line 347, in get_sankey
+    fig, all_nodes, link_reports, node_indices = create_sankey(df, selected_owner, quarter, year)
+  File "G:\Shared drives\Lintelman Team Drive\DRIVE\project\rpt_sankey\app.py", line 78, in create_sankey
+    filtered_df = apply_transformation(filtered_df, quarter, year)
+  File "G:\Shared drives\Lintelman Team Drive\DRIVE\project\rpt_sankey\app.py", line 40, in apply_transformation
+    quarters_from_start = (year - 2025) * 4 + quarter
+TypeError: unsupported operand type(s) for -: 'str' and 'int'
+63.14.8.151 - - [28/Feb/2025 17:22:45] "GET /get_sankey?owner=All%20Owners&quarter=1&year=2025 HTTP/1.1" 200 -
 
-    streamlit run run.py [ARGUMENTS]
-2025-01-20 13:00:29.423 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
-2025-01-20 13:00:29.425 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
-2025-01-20 13:00:29.426 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
-2025-01-20 13:00:29.426 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
-2025-01-20 13:00:29.427 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
-2025-01-20 13:00:29.428 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
-2025-01-20 13:00:29.435 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
-2025-01-20 13:00:29.437 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
-2025-01-20 13:00:29.437 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
-2025-01-20 13:00:29.439 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
-2025-01-20 13:00:29.441 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
-2025-01-20 13:00:29.442 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
-2025-01-20 13:00:29.443 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
-2025-01-20 13:00:29.444 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
-2025-01-20 13:00:29.445 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
-2025-01-20 13:00:29.445 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
-2025-01-20 13:00:29.571 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
-2025-01-20 13:00:29.572 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
-2025-01-20 13:00:29.573 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
-2025-01-20 13:00:29.573 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
-2025-01-20 13:00:29.600 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
-2025-01-20 13:00:29.601 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
-(sankey) PS G:\Shared drives\Lintelman Team Drive\DRIVE\reports\rpt_sankey>
