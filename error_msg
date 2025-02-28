@@ -1,78 +1,22 @@
+(sankey) PS G:\Shared drives\Lintelman Team Drive\DRIVE\project\rpt_sankey> python app.py
+ * Serving Flask app 'app' (lazy loading)
+ * Environment: production
+   WARNING: This is a development server. Do not use it in a production deployment.
+   Use a production WSGI server instead.
+ * Debug mode: on
+ * Restarting with watchdog (windowsapi)
+ * Debugger is active!
+ * Debugger PIN: 117-000-050
+ * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
  * Running on http://63.25.164.225:5008/ (Press CTRL+C to quit)
-63.14.8.151 - - [28/Feb/2025 17:22:16] "GET / HTTP/1.1" 200 -
-63.14.8.151 - - [28/Feb/2025 17:22:16] "GET /static/js/script.js HTTP/1.1" 200 -
-63.14.8.151 - - [28/Feb/2025 17:22:16] "GET /static/css/style.css HTTP/1.1" 304 -
-63.14.8.151 - - [28/Feb/2025 17:22:16] "GET /get_owners HTTP/1.1" 200 -
-63.14.8.151 - - [28/Feb/2025 17:22:16] "GET /get_sankey?owner=All%20Owners&quarter=&year= HTTP/1.1" 500 -
-Traceback (most recent call last):
-  File "C:\Users\sriwope\AppData\Local\Miniconda39\envs\sankey\Lib\site-packages\flask\app.py", line 2088, in __call__
-    return self.wsgi_app(environ, start_response)
-  File "C:\Users\sriwope\AppData\Local\Miniconda39\envs\sankey\Lib\site-packages\flask\app.py", line 2073, in wsgi_app
-    response = self.handle_exception(e)
-  File "C:\Users\sriwope\AppData\Local\Miniconda39\envs\sankey\Lib\site-packages\flask\app.py", line 2070, in wsgi_app
-    response = self.full_dispatch_request()
-  File "C:\Users\sriwope\AppData\Local\Miniconda39\envs\sankey\Lib\site-packages\flask\app.py", line 1515, in full_dispatch_request
-    rv = self.handle_user_exception(e)
-  File "C:\Users\sriwope\AppData\Local\Miniconda39\envs\sankey\Lib\site-packages\flask\app.py", line 1513, in full_dispatch_request
-    rv = self.dispatch_request()
-  File "C:\Users\sriwope\AppData\Local\Miniconda39\envs\sankey\Lib\site-packages\flask\app.py", line 1499, in dispatch_request
-    return self.ensure_sync(self.view_functions[rule.endpoint])(**req.view_args)
-  File "G:\Shared drives\Lintelman Team Drive\DRIVE\project\rpt_sankey\app.py", line 347, in get_sankey
-    fig, all_nodes, link_reports, node_indices = create_sankey(df, selected_owner, quarter, year)
-  File "G:\Shared drives\Lintelman Team Drive\DRIVE\project\rpt_sankey\app.py", line 78, in create_sankey
-    filtered_df = apply_transformation(filtered_df, quarter, year)
-  File "G:\Shared drives\Lintelman Team Drive\DRIVE\project\rpt_sankey\app.py", line 40, in apply_transformation
-    quarters_from_start = (year - 2025) * 4 + quarter
-TypeError: unsupported operand type(s) for -: 'str' and 'int'
-63.14.8.151 - - [28/Feb/2025 17:22:21] "GET /get_sankey?owner=All%20Owners&quarter=&year= HTTP/1.1" 500 -
-Traceback (most recent call last):
-  File "C:\Users\sriwope\AppData\Local\Miniconda39\envs\sankey\Lib\site-packages\flask\app.py", line 2088, in __call__
-    return self.wsgi_app(environ, start_response)
-  File "C:\Users\sriwope\AppData\Local\Miniconda39\envs\sankey\Lib\site-packages\flask\app.py", line 2073, in wsgi_app
-    response = self.handle_exception(e)
-  File "C:\Users\sriwope\AppData\Local\Miniconda39\envs\sankey\Lib\site-packages\flask\app.py", line 2070, in wsgi_app
-    response = self.full_dispatch_request()
-  File "C:\Users\sriwope\AppData\Local\Miniconda39\envs\sankey\Lib\site-packages\flask\app.py", line 1515, in full_dispatch_request
-    rv = self.handle_user_exception(e)
-  File "C:\Users\sriwope\AppData\Local\Miniconda39\envs\sankey\Lib\site-packages\flask\app.py", line 1513, in full_dispatch_request
-    rv = self.dispatch_request()
-  File "C:\Users\sriwope\AppData\Local\Miniconda39\envs\sankey\Lib\site-packages\flask\app.py", line 1499, in dispatch_request
-    return self.ensure_sync(self.view_functions[rule.endpoint])(**req.view_args)
-  File "G:\Shared drives\Lintelman Team Drive\DRIVE\project\rpt_sankey\app.py", line 347, in get_sankey
-    fig, all_nodes, link_reports, node_indices = create_sankey(df, selected_owner, quarter, year)
-  File "G:\Shared drives\Lintelman Team Drive\DRIVE\project\rpt_sankey\app.py", line 78, in create_sankey
-    filtered_df = apply_transformation(filtered_df, quarter, year)
-  File "G:\Shared drives\Lintelman Team Drive\DRIVE\project\rpt_sankey\app.py", line 40, in apply_transformation
-    quarters_from_start = (year - 2025) * 4 + quarter
-TypeError: unsupported operand type(s) for -: 'str' and 'int'
-63.14.8.151 - - [28/Feb/2025 17:22:24] "GET /get_sankey?owner=All%20Owners&quarter=1&year=2025 HTTP/1.1" 200 -
-63.14.8.151 - - [28/Feb/2025 17:22:24] "GET /get_sankey?owner=All%20Owners&quarter=1&year=2025 HTTP/1.1" 200 -
-63.14.8.151 - - [28/Feb/2025 17:22:24] "GET /get_sankey?owner=All%20Owners&quarter=2&year=2025 HTTP/1.1" 200 -
-63.14.8.151 - - [28/Feb/2025 17:22:26] "GET /get_sankey?owner=All%20Owners&quarter=2&year=2025 HTTP/1.1" 200 -
-63.14.8.151 - - [28/Feb/2025 17:22:28] "GET /get_sankey?owner=All%20Owners&quarter=3&year=2025 HTTP/1.1" 200 -
-63.14.8.151 - - [28/Feb/2025 17:22:30] "GET /get_sankey?owner=All%20Owners&quarter=4&year=2025 HTTP/1.1" 200 -
-63.14.8.151 - - [28/Feb/2025 17:22:32] "GET /get_sankey?owner=All%20Owners&quarter=1&year=2026 HTTP/1.1" 200 -
-63.14.8.151 - - [28/Feb/2025 17:22:34] "GET /get_sankey?owner=All%20Owners&quarter=2&year=2026 HTTP/1.1" 200 -
-63.14.8.151 - - [28/Feb/2025 17:22:43] "GET /get_sankey?owner=All%20Owners&quarter=&year= HTTP/1.1" 500 -
-Traceback (most recent call last):
-  File "C:\Users\sriwope\AppData\Local\Miniconda39\envs\sankey\Lib\site-packages\flask\app.py", line 2088, in __call__
-    return self.wsgi_app(environ, start_response)
-  File "C:\Users\sriwope\AppData\Local\Miniconda39\envs\sankey\Lib\site-packages\flask\app.py", line 2073, in wsgi_app
-    response = self.handle_exception(e)
-  File "C:\Users\sriwope\AppData\Local\Miniconda39\envs\sankey\Lib\site-packages\flask\app.py", line 2070, in wsgi_app
-    response = self.full_dispatch_request()
-  File "C:\Users\sriwope\AppData\Local\Miniconda39\envs\sankey\Lib\site-packages\flask\app.py", line 1515, in full_dispatch_request
-    rv = self.handle_user_exception(e)
-  File "C:\Users\sriwope\AppData\Local\Miniconda39\envs\sankey\Lib\site-packages\flask\app.py", line 1513, in full_dispatch_request
-    rv = self.dispatch_request()
-  File "C:\Users\sriwope\AppData\Local\Miniconda39\envs\sankey\Lib\site-packages\flask\app.py", line 1499, in dispatch_request
-    return self.ensure_sync(self.view_functions[rule.endpoint])(**req.view_args)
-  File "G:\Shared drives\Lintelman Team Drive\DRIVE\project\rpt_sankey\app.py", line 347, in get_sankey
-    fig, all_nodes, link_reports, node_indices = create_sankey(df, selected_owner, quarter, year)
-  File "G:\Shared drives\Lintelman Team Drive\DRIVE\project\rpt_sankey\app.py", line 78, in create_sankey
-    filtered_df = apply_transformation(filtered_df, quarter, year)
-  File "G:\Shared drives\Lintelman Team Drive\DRIVE\project\rpt_sankey\app.py", line 40, in apply_transformation
-    quarters_from_start = (year - 2025) * 4 + quarter
-TypeError: unsupported operand type(s) for -: 'str' and 'int'
-63.14.8.151 - - [28/Feb/2025 17:22:45] "GET /get_sankey?owner=All%20Owners&quarter=1&year=2025 HTTP/1.1" 200 -
+63.14.8.151 - - [28/Feb/2025 17:40:48] "GET / HTTP/1.1" 200 -
+63.14.8.151 - - [28/Feb/2025 17:40:48] "GET /static/js/script.js HTTP/1.1" 304 -
+63.14.8.151 - - [28/Feb/2025 17:40:48] "GET /static/css/style.css HTTP/1.1" 304 -
+63.14.8.151 - - [28/Feb/2025 17:40:48] "GET /get_owners HTTP/1.1" 200 -
+63.14.8.151 - - [28/Feb/2025 17:40:49] "GET /get_sankey?owner=All%20Owners&quarter=&year= HTTP/1.1" 200 -
+63.14.8.151 - - [28/Feb/2025 17:41:05] "GET /get_report_details?report_name=FRN%20MMM%20YY%20SR%20PMRA%20Ckts HTTP/1.1" 200 -
+63.14.8.151 - - [28/Feb/2025 17:41:42] "GET /get_report_details?report_name=In%20and%20Out%20of%20Scope%20Circuit HTTP/1.1" 200 -
+63.14.8.151 - - [28/Feb/2025 17:41:47] "GET /get_report_details?report_name=FRN%20Auto%20Tracker HTTP/1.1" 200 -
+63.14.8.151 - - [28/Feb/2025 17:41:50] "GET /get_report_details?report_name=Networx%20Auto%20Tracker HTTP/1.1" 200 -
 
