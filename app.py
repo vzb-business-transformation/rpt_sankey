@@ -1,5 +1,4 @@
 # app.py
-
 from flask import Flask, render_template, request, jsonify
 import pandas as pd
 import plotly.graph_objects as go
@@ -10,7 +9,7 @@ app = Flask(__name__)
 
 # Load and prepare data
 def load_data():
-    report_df = pd.read_csv('file/reports.csv')
+    report_df = pd.read_csv('reports.csv')
     df = report_df[report_df['Report_Name'].notna()]
 
     new_name = ['data_source', 'report_name', 'stakeholder', 'program',
@@ -28,6 +27,14 @@ def apply_transformation(df, quarter, year):
 
     # Create a deep copy to avoid modifying the original dataframe
     transformed_df = df.copy(deep=True)
+
+    # Skip transformation if quarter or year is None or empty
+    if quarter is None or year is None or quarter == '' or year == '':
+        return transformed_df
+
+    # Make sure quarter and year are integers
+    quarter = int(quarter)
+    year = int(year)
 
     # Determine how many reports to transform based on the quarter and year
     # More aggressive transformations in later quarters
@@ -74,8 +81,7 @@ def create_sankey(df, selected_owner=None, quarter=None, year=None):
         filtered_df = df.copy()
 
     # Apply transformations for future projections if quarter and year are specified
-    if quarter is not None and year is not None:
-        filtered_df = apply_transformation(filtered_df, quarter, year)
+    filtered_df = apply_transformation(filtered_df, quarter, year)
 
     # Create links between nodes
     link_source_owner = count_values(filtered_df, 'data_source', 'report_owner')
@@ -280,7 +286,7 @@ def create_sankey(df, selected_owner=None, quarter=None, year=None):
 
     # Update layout
     title_text = "Reporting Management Flow"
-    if quarter is not None and year is not None:
+    if quarter and year and quarter != '' and year != '':
         title_text = f"Reporting Management Flow - Q{quarter} {year} Projection"
 
     if selected_owner and selected_owner != "All Owners":
@@ -335,14 +341,8 @@ def get_owners():
 def get_sankey():
     df = load_data()
     selected_owner = request.args.get('owner', 'All Owners')
-    quarter = request.args.get('quarter')
-    year = request.args.get('year')
-
-    # Convert quarter and year to integers if they exist
-    if quarter:
-        quarter = int(quarter)
-    if year:
-        year = int(year)
+    quarter = request.args.get('quarter', '')
+    year = request.args.get('year', '')
 
     fig, all_nodes, link_reports, node_indices = create_sankey(df, selected_owner, quarter, year)
 
@@ -392,6 +392,7 @@ def get_report_details():
     report_data = report.iloc[0].to_dict()
 
     return jsonify({"report": report_data})
+
 
 
 if __name__ == "__main__":
