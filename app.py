@@ -349,28 +349,47 @@ def get_sankey():
     # Prepare data for client-side processing
     node_data = {i: node for i, node in enumerate(all_nodes)}
 
-    # Get reports for each node
+    # Get reports for each node - collecting all reports by their category
     node_reports = {}
+
+    # Get all automation levels for direct access
+    automation_levels = ['Fully Automated', 'Self Service', 'Manual']
+
     for node_name in all_nodes:
+        node_idx = node_indices[node_name]
+
+        # Create specialized queries for each type of node
         if node_name in df['data_source'].values:
-            node_reports[node_indices[node_name]] = df[df['data_source'] == node_name]['report_name'].tolist()
+            node_reports[node_idx] = df[df['data_source'] == node_name]['report_name'].tolist()
         elif node_name in df['report_owner'].values:
-            node_reports[node_indices[node_name]] = df[df['report_owner'] == node_name]['report_name'].tolist()
+            node_reports[node_idx] = df[df['report_owner'] == node_name]['report_name'].tolist()
         elif node_name in df['stakeholder'].values:
-            node_reports[node_indices[node_name]] = df[df['stakeholder'] == node_name]['report_name'].tolist()
+            node_reports[node_idx] = df[df['stakeholder'] == node_name]['report_name'].tolist()
         elif node_name in df['output_type'].values:
-            node_reports[node_indices[node_name]] = df[df['output_type'] == node_name]['report_name'].tolist()
-        elif node_name in df['automation_level'].values:
-            node_reports[node_indices[node_name]] = df[df['automation_level'] == node_name]['report_name'].tolist()
+            node_reports[node_idx] = df[df['output_type'] == node_name]['report_name'].tolist()
+        elif node_name in automation_levels:
+            # Get all reports with this automation level - filter by the filtered dataframe
+            node_reports[node_idx] = filtered_df[filtered_df['automation_level'] == node_name]['report_name'].tolist()
         elif node_name in df['delivery_schedule'].values:
-            node_reports[node_indices[node_name]] = df[df['delivery_schedule'] == node_name]['report_name'].tolist()
+            node_reports[node_idx] = df[df['delivery_schedule'] == node_name]['report_name'].tolist()
+
+    # Add summary statistics
+    stats = {
+        "total_reports": len(filtered_df),
+        "automation_breakdown": {
+            "Fully Automated": len(filtered_df[filtered_df['automation_level'] == 'Fully Automated']),
+            "Self Service": len(filtered_df[filtered_df['automation_level'] == 'Self Service']),
+            "Manual": len(filtered_df[filtered_df['automation_level'] == 'Manual']),
+        }
+    }
 
     # Add custom data to the response
     response = {
         "plot": fig.to_json(),
         "node_data": node_data,
         "node_reports": node_reports,
-        "link_reports": link_reports
+        "link_reports": link_reports,
+        "stats": stats
     }
 
     return jsonify(response)
