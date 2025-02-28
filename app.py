@@ -9,7 +9,7 @@ app = Flask(__name__)
 
 # Load and prepare data
 def load_data():
-    report_df = pd.read_csv('reports.csv')
+    report_df = pd.read_csv('file/reports.csv')
     df = report_df[report_df['Report_Name'].notna()]
 
     new_name = ['data_source', 'report_name', 'stakeholder', 'program',
