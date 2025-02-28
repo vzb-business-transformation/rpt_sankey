@@ -5,6 +5,7 @@ channels:
 dependencies:
   - python=3.10
   - flask=2.0.1
+  - plotly>=5.0.0
   - psycopg2=2.9.1
   - pytest=6.2.5
   - werkzeug>=2.0.1
