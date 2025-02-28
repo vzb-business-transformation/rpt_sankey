@@ -131,6 +131,24 @@ select:focus {
     font-size: 18px;
     font-weight: bold;
     color: #333;
+    transition: all 0.5s;
+}
+
+.stat-value.changing {
+    transform: scale(1.1);
+}
+
+/* Different colors for automation stats */
+#automated-reports {
+    color: #28a745; /* green */
+}
+
+#self-service-reports {
+    color: #fd7e14; /* orange */
+}
+
+#manual-reports {
+    color: #dc3545; /* red */
 }
 
 /* Sankey container */
@@ -141,6 +159,12 @@ select:focus {
     min-height: 800px;
     margin-bottom: 20px;
     position: relative;
+}
+
+/* Make sure plotly elements are visible */
+.js-plotly-plot, .plot-container {
+    width: 100% !important;
+    height: 100% !important;
 }
 
 /* Loading indicator */
@@ -155,6 +179,19 @@ select:focus {
     background-color: rgba(255, 255, 255, 0.8);
     border-radius: 5px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+}
+
+.loading:after {
+    content: "";
+    width: 20px;
+    height: 20px;
+    margin-left: 15px;
+    border: 3px solid #007bff;
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: spin 1s linear infinite;
 }
 
 /* Report panel */
@@ -266,26 +303,8 @@ select:focus {
     animation: highlight 1.5s ease-out;
 }
 
-/* Automated vs Manual coloring */
-#automated-reports {
-    color: #28a745;
-}
-
-#self-service-reports {
-    color: #fd7e14;
-}
-
-#manual-reports {
-    color: #dc3545;
-}
-
-/* Transition animations for stats */
-.stat-value {
-    transition: all 0.5s;
-}
-
-.stat-value.changing {
-    transform: scale(1.1);
+@keyframes spin {
+    to { transform: rotate(360deg); }
 }
 
 /* Responsive design */

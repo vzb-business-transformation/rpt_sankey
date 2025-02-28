@@ -1,4 +1,5 @@
 // static/js/script.js
+// static/js/script.js
 $(document).ready(function() {
     // State variables
     let nodeData = {};
@@ -249,3 +250,4 @@ $(document).ready(function() {
             element.appendChild(detailsDiv);
         });
     }
+});

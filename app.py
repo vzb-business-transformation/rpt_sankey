@@ -344,12 +344,22 @@ def get_sankey():
     quarter = request.args.get('quarter', '')
     year = request.args.get('year', '')
 
+    # Get figure and data from create_sankey
     fig, all_nodes, link_reports, node_indices = create_sankey(df, selected_owner, quarter, year)
+
+    # Recreate filtered_df here to match what's in create_sankey
+    if selected_owner and selected_owner != "All Owners":
+        filtered_df = df[df['report_owner'] == selected_owner]
+    else:
+        filtered_df = df.copy()
+
+    # Apply the same transformations
+    filtered_df = apply_transformation(filtered_df, quarter, year)
 
     # Prepare data for client-side processing
     node_data = {i: node for i, node in enumerate(all_nodes)}
 
-    # Get reports for each node - collecting all reports by their category
+    # Get reports for each node
     node_reports = {}
 
     # Get all automation levels for direct access
@@ -368,7 +378,7 @@ def get_sankey():
         elif node_name in df['output_type'].values:
             node_reports[node_idx] = df[df['output_type'] == node_name]['report_name'].tolist()
         elif node_name in automation_levels:
-            # Get all reports with this automation level - filter by the filtered dataframe
+            # Get all reports with this automation level from the filtered dataframe
             node_reports[node_idx] = filtered_df[filtered_df['automation_level'] == node_name]['report_name'].tolist()
         elif node_name in df['delivery_schedule'].values:
             node_reports[node_idx] = df[df['delivery_schedule'] == node_name]['report_name'].tolist()
