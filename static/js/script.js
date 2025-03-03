@@ -1,4 +1,5 @@
 // static/js/script.js
+
 $(document).ready(function() {
     // State variables
     let nodeData = {};
@@ -6,6 +7,7 @@ $(document).ready(function() {
     let linkReports = {};
     let animationInterval = null;
     let currentReports = []; // Store current selected reports
+    let isLoading = false;
 
     // Load owners for dropdown
     $.get('/get_owners', function(data) {
@@ -27,6 +29,9 @@ $(document).ready(function() {
         $('.time-btn').removeClass('active');
         $(this).addClass('active');
         loadSankey();
+
+        // Update transformation progress
+        updateTransformationProgress();
     });
 
     $('#play-animation').click(function() {
@@ -43,6 +48,7 @@ $(document).ready(function() {
             $('.time-btn').removeClass('active');
             $('.time-btn:first-child').addClass('active');
             loadSankey();
+            updateTransformationProgress();
 
             let currentIndex = 0;
             const timeButtons = $('.time-btn');
@@ -52,18 +58,23 @@ $(document).ready(function() {
                 timeButtons.removeClass('active');
                 $(timeButtons[currentIndex]).addClass('active');
                 loadSankey();
+                updateTransformationProgress();
 
                 if (currentIndex === timeButtons.length - 1) {
                     clearInterval(animationInterval);
                     animationInterval = null;
                     $('#play-animation').text('▶ Play Animation');
                 }
-            }, 2000); // Change every 2 seconds
+            }, 3000); // Change every 3 seconds (increased for better visibility)
         }
     });
 
     // Function to load the Sankey diagram
     function loadSankey() {
+        if (isLoading) return; // Prevent multiple simultaneous loads
+
+        isLoading = true;
+
         // Show loading indicator
         $('#sankey-container').html('<div class="loading">Loading diagram...</div>');
 
@@ -78,8 +89,24 @@ $(document).ready(function() {
         // Update timeline context if selected
         if (quarter && year) {
             $('#timeline-context').text(`Data showing projection for Q${quarter} ${year}`);
+
+            // Calculate percentage through the roadmap (for progress bar)
+            const totalQuarters = 7; // Current + 6 quarters
+            let currentQuarter = 0;
+
+            if (year === 2025) {
+                currentQuarter = quarter;
+            } else if (year === 2026) {
+                currentQuarter = 4 + quarter;
+            }
+
+            const progressPercent = (currentQuarter / totalQuarters) * 100;
+            $('#transformation-progress-bar').css('width', progressPercent + '%');
+            $('#transformation-progress-text').text(`Transformation Progress: ${Math.round(progressPercent)}%`);
         } else {
             $('#timeline-context').text('Data showing current state');
+            $('#transformation-progress-bar').css('width', '0%');
+            $('#transformation-progress-text').text('Transformation Progress: 0%');
         }
 
         $.get('/get_sankey', {
@@ -94,11 +121,29 @@ $(document).ready(function() {
 
             // Parse the Plotly figure
             const figure = JSON.parse(data.plot);
-            Plotly.newPlot('sankey-container', figure.data, figure.layout);
+
+            // Configure hover mode to be more persistent
+            if (figure.layout) {
+                figure.layout.hovermode = 'closest';
+                figure.layout.hoverdistance = 100;
+            }
+
+            Plotly.newPlot('sankey-container', figure.data, figure.layout, {
+                displayModeBar: true,
+                modeBarButtonsToRemove: ['toImage', 'sendDataToCloud'],
+                responsive: true
+            });
 
             // Add click event listener
             document.getElementById('sankey-container').on('plotly_click', function(clickData) {
                 handlePlotlyClick(clickData);
+            });
+
+            // Increase hover duration by capturing hover events
+            document.getElementById('sankey-container').on('plotly_hover', function(hoverData) {
+                // The hover data contains the point information
+                // We don't need to do anything, just having this event helps
+                // make the tooltips more stable
             });
 
             // Update statistics directly from the data
@@ -108,7 +153,111 @@ $(document).ready(function() {
                 // Fallback to counting reports if stats not provided by server
                 countReportsFromNodeData();
             }
+
+            // Update the transformation summary
+            updateTransformationSummary(data.stats);
+
+            // Hide loading indicator
+            isLoading = false;
+        }).fail(function(error) {
+            console.error("Error loading data:", error);
+            $('#sankey-container').html('<div class="error-message">Error loading diagram. Please try again.</div>');
+            isLoading = false;
         });
+    }
+
+    // Update transformation progress metrics
+    function updateTransformationProgress() {
+        const selectedTimeBtn = $('.time-btn.active');
+        const quarter = selectedTimeBtn.data('quarter');
+        const year = selectedTimeBtn.data('year');
+
+        if (!quarter || !year) {
+            // Current state - no transformation
+            $('#transformation-target').html('Target: Transform 80% of Semi-Automated reports by Q2 2026');
+            return;
+        }
+
+        // Calculate progress based on the quarter/year
+        let totalQuarters = 6; // 6 quarters in the roadmap
+        let currentQuarter = 0;
+
+        if (year === 2025) {
+            currentQuarter = quarter;
+        } else if (year === 2026) {
+            currentQuarter = 4 + quarter;
+        }
+
+        // Calculate expected progress (linear progression)
+        const expectedProgress = Math.min(80, Math.round((currentQuarter / totalQuarters) * 80));
+
+        $('#transformation-target').html(`
+            <div>Target: Transform 80% of Semi-Automated reports by Q2 2026</div>
+            <div>Expected progress through Q${quarter} ${year}: ${expectedProgress}%</div>
+        `);
+    }
+
+    // Update transformation summary based on current stats
+    function updateTransformationSummary(stats) {
+        if (!stats) return;
+
+        const totalReports = stats.total_reports;
+        const semiCount = stats.automation_breakdown["Semi"] || 0;
+        const fullyCount = stats.automation_breakdown["Fully"] || 0;
+        const tableauCount = stats.automation_breakdown["Tableau"] || 0;
+
+        // Original Semi count (assuming it was ~46 to start with)
+        const originalSemi = 46;
+        const transformedCount = originalSemi - semiCount;
+        const transformationPercent = Math.round((transformedCount / originalSemi) * 100);
+
+        let statusText = '';
+        let statusClass = '';
+
+        if (transformationPercent >= 80) {
+            statusText = 'Target Achieved';
+            statusClass = 'status-success';
+        } else {
+            const selectedTimeBtn = $('.time-btn.active');
+            const quarter = selectedTimeBtn.data('quarter');
+            const year = selectedTimeBtn.data('year');
+
+            if (!quarter || !year) {
+                statusText = 'Not Started';
+                statusClass = 'status-not-started';
+            } else {
+                // Calculate expected progress
+                let totalQuarters = 6; // 6 quarters in the roadmap
+                let currentQuarter = 0;
+
+                if (year === 2025) {
+                    currentQuarter = quarter;
+                } else if (year === 2026) {
+                    currentQuarter = 4 + quarter;
+                }
+
+                const expectedProgress = Math.min(80, Math.round((currentQuarter / totalQuarters) * 80));
+
+                if (transformationPercent >= expectedProgress) {
+                    statusText = 'On Track';
+                    statusClass = 'status-on-track';
+                } else {
+                    statusText = 'Behind Schedule';
+                    statusClass = 'status-behind';
+                }
+            }
+        }
+
+        $('#transformation-summary').html(`
+            <div class="summary-row">
+                <div class="summary-label">Transformed Semi-Automated Reports:</div>
+                <div class="summary-value">${transformedCount} of ${originalSemi} (${transformationPercent}%)</div>
+            </div>
+            <div class="summary-row">
+                <div class="summary-label">Status:</div>
+                <div class="summary-value ${statusClass}">${statusText}</div>
+            </div>
+        `);
     }
 
     // Update stats using direct data from server
@@ -185,6 +334,7 @@ $(document).ready(function() {
         };
 
         updateStats(stats);
+        updateTransformationSummary(stats);
     }
 
     // Function to handle clicks on the Sankey diagram

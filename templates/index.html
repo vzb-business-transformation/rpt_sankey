@@ -38,6 +38,32 @@
             <p id="timeline-context" class="timeline-context">Data showing current state</p>
         </div>
 
+        <!-- Transformation Progress Section -->
+        <div class="transformation-progress">
+            <div class="progress-header">
+                <h3>Automation Roadmap Progress</h3>
+                <div id="transformation-target">Target: Transform 80% of Semi-Automated reports by Q2 2026</div>
+            </div>
+
+            <div class="progress-bar-container">
+                <div class="progress-bar">
+                    <div id="transformation-progress-bar" class="progress-bar-fill"></div>
+                </div>
+                <div id="transformation-progress-text" class="progress-text">Transformation Progress: 0%</div>
+            </div>
+
+            <div id="transformation-summary" class="transformation-summary">
+                <div class="summary-row">
+                    <div class="summary-label">Transformed Semi-Automated Reports:</div>
+                    <div class="summary-value">0 of 46 (0%)</div>
+                </div>
+                <div class="summary-row">
+                    <div class="summary-label">Status:</div>
+                    <div class="summary-value status-not-started">Not Started</div>
+                </div>
+            </div>
+        </div>
+
         <div class="stats-bar">
             <div class="stat-item">
                 <div class="stat-label">Total Reports</div>
@@ -63,7 +89,7 @@
 
         <div id="sankey-container"></div>
 
-        <!-- New Reports List Section -->
+        <!-- Reports List Section -->
         <div id="reports-list-container" class="reports-section"></div>
     </div>
 

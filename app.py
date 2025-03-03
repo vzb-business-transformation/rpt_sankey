@@ -22,6 +22,7 @@ def load_data():
 
 
 # Create the transformation functions for future projections
+# Create the transformation functions for future projections
 def apply_transformation(df, quarter, year):
     """Apply roadmap transformations for the specified quarter and year"""
 
@@ -36,33 +37,34 @@ def apply_transformation(df, quarter, year):
     quarter = int(quarter)
     year = int(year)
 
-    # Determine how many reports to transform based on the quarter and year
-    # More aggressive transformations in later quarters
+    # Calculate how many quarters into the roadmap we are (Q1 2025 = 1, Q2 2026 = 6)
+    quarters_from_start = 0
+    if year == 2025:
+        quarters_from_start = quarter
+    elif year == 2026:
+        quarters_from_start = 4 + quarter
 
-    # Define base percentage to transform for Q1 2025
-    base_transform_pct = 0.15
+    # Target is to transform 80% of Semi-Automated reports by Q2 2026 (quarter 6)
+    # Calculate what percentage should be transformed by the current quarter
+    # Linear progression over 6 quarters
+    target_pct = min(0.8, (quarters_from_start / 6) * 0.8)
 
-    # Calculate the transformation percentage based on the quarter and year
-    # Each quarter increases the transformation percentage
-    quarters_from_start = (year - 2025) * 4 + quarter
-    transform_pct = min(0.8, base_transform_pct * quarters_from_start)
-
-    # Only transform Manual to Automation/Self Service
-    manual_reports = transformed_df[transformed_df['automation_level'] == 'Manual']
+    # Only transform Semi to either Fully or Tableau (based on initial requirements)
+    semi_reports = transformed_df[transformed_df['automation_level'] == 'Semi']
 
     # Determine how many reports to transform
-    num_to_transform = int(len(manual_reports) * transform_pct)
+    num_to_transform = int(len(semi_reports) * (target_pct * 6 / 5))  # Adjust to hit 80% by Q2 2026
 
     if num_to_transform > 0:
         # Select the reports to transform
-        to_transform_indices = manual_reports.sample(num_to_transform).index
+        to_transform_indices = semi_reports.sample(min(num_to_transform, len(semi_reports))).index
 
-        # Transform 70% to Fully Automated and 30% to Self Service (Tableau)
+        # Transform 65% to Fully and 35% to Tableau
         for idx in to_transform_indices:
-            if idx % 10 < 7:  # 70% to Fully Automated
-                transformed_df.loc[idx, 'automation_level'] = 'Fully Automated'
-            else:  # 30% to Self Service (Tableau)
-                transformed_df.loc[idx, 'automation_level'] = 'Self Service'
+            if idx % 100 < 65:  # 65% to Fully
+                transformed_df.loc[idx, 'automation_level'] = 'Fully'
+            else:  # 35% to Tableau
+                transformed_df.loc[idx, 'automation_level'] = 'Tableau'
 
     return transformed_df
 
