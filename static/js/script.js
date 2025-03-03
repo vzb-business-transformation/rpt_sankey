@@ -69,14 +69,46 @@ $(document).ready(function() {
         }
     });
 
+    // Set up selection mode buttons
+    $('.select-btn').click(function() {
+        $('#sankey-container').removeClass('inspect-mode');
+        $('.selection-controls button').removeClass('active');
+        $(this).addClass('active');
+    });
+
+    $('.inspect-btn').click(function() {
+        $('#sankey-container').addClass('inspect-mode');
+        $('.selection-controls button').removeClass('active');
+        $(this).addClass('active');
+    });
+
+    // View all reports button
+    $('#view-all-reports').click(function() {
+        displayAllReports();
+    });
+
     // Function to load the Sankey diagram
     function loadSankey() {
-        if (isLoading) return; // Prevent multiple simultaneous loads
+        // Clear any existing loading indicators first
+        $('#sankey-container .loading').remove();
 
+        // Prevent multiple simultaneous loads
+        if (isLoading) return;
         isLoading = true;
 
         // Show loading indicator
-        $('#sankey-container').html('<div class="loading">Loading diagram...</div>');
+        const loadingDiv = $('<div class="loading">Loading diagram...</div>');
+        $('#sankey-container').html(loadingDiv);
+
+        // Safety timeout - if loading takes more than 15 seconds, clear it
+        const loadingTimeout = setTimeout(function() {
+            if (isLoading) {
+                isLoading = false;
+                $('#sankey-container .loading').fadeOut(function() {
+                    $(this).remove();
+                });
+            }
+        }, 15000);
 
         // Clear the reports list when loading new data
         $('#reports-list-container').empty();
@@ -114,6 +146,9 @@ $(document).ready(function() {
             quarter: quarter,
             year: year
         }, function(data) {
+            // Clear loading timeout
+            clearTimeout(loadingTimeout);
+
             // Store the node and link data
             nodeData = data.node_data;
             nodeReports = data.node_reports;
@@ -126,8 +161,17 @@ $(document).ready(function() {
             if (figure.layout) {
                 figure.layout.hovermode = 'closest';
                 figure.layout.hoverdistance = 100;
+
+                // Increase font size of labels
+                if (figure.layout.font) {
+                    figure.layout.font.size = 14;
+                }
             }
 
+            // Remove loading indicator
+            $('#sankey-container .loading').remove();
+
+            // Create Plotly diagram with improved configuration
             Plotly.newPlot('sankey-container', figure.data, figure.layout, {
                 displayModeBar: true,
                 modeBarButtonsToRemove: ['toImage', 'sendDataToCloud'],
@@ -139,11 +183,13 @@ $(document).ready(function() {
                 handlePlotlyClick(clickData);
             });
 
-            // Increase hover duration by capturing hover events
+            // Make tooltips more stable by adding hover event
             document.getElementById('sankey-container').on('plotly_hover', function(hoverData) {
-                // The hover data contains the point information
-                // We don't need to do anything, just having this event helps
-                // make the tooltips more stable
+                // Capture hover events to keep tooltips visible longer in inspect mode
+                if ($('#sankey-container').hasClass('inspect-mode')) {
+                    // Keep tooltip visible
+                    $('.js-plotly-plot .plotly .hoverlayer').css('opacity', 1);
+                }
             });
 
             // Update statistics directly from the data
@@ -157,12 +203,14 @@ $(document).ready(function() {
             // Update the transformation summary
             updateTransformationSummary(data.stats);
 
-            // Hide loading indicator
+            // Reset loading state
             isLoading = false;
-        }).fail(function(error) {
+        })
+        .fail(function(error) {
             console.error("Error loading data:", error);
             $('#sankey-container').html('<div class="error-message">Error loading diagram. Please try again.</div>');
             isLoading = false;
+            clearTimeout(loadingTimeout);
         });
     }
 
@@ -203,8 +251,6 @@ $(document).ready(function() {
 
         const totalReports = stats.total_reports;
         const semiCount = stats.automation_breakdown["Semi"] || 0;
-        const fullyCount = stats.automation_breakdown["Fully"] || 0;
-        const tableauCount = stats.automation_breakdown["Tableau"] || 0;
 
         // Original Semi count (assuming it was ~46 to start with)
         const originalSemi = 46;
@@ -344,6 +390,7 @@ $(document).ready(function() {
         const point = data.points[0];
         let reports = [];
         let title = '';
+        let categoryName = '';
 
         if (point.pointNumber !== undefined) {
             // This is a node
@@ -351,6 +398,7 @@ $(document).ready(function() {
             const nodeName = nodeData[nodeIndex];
             title = `Reports for ${nodeName}`;
             reports = nodeReports[nodeIndex] || [];
+            categoryName = nodeName;
         } else if (point.source && point.target) {
             // This is a link
             const sourceIndex = point.source.index;
@@ -360,17 +408,18 @@ $(document).ready(function() {
 
             title = `Reports from ${sourceName} to ${targetName}`;
             reports = linkReports[`${sourceIndex}-${targetIndex}`] || [];
+            categoryName = `${sourceName} to ${targetName}`;
         }
 
         // Store current reports
         currentReports = reports;
 
         // Display reports below chart
-        displayReportsList(title, reports);
+        displayReportsList(title, reports, categoryName);
     }
 
     // Display reports in the reports list container
-    function displayReportsList(title, reports) {
+    function displayReportsList(title, reports, categoryName) {
         const container = $('#reports-list-container');
         container.empty();
 
@@ -385,8 +434,11 @@ $(document).ready(function() {
 
         // Create reports list
         const list = $('<ul class="reports-list"></ul>');
-        reports.forEach(report => {
+        reports.forEach((report, index) => {
             const item = $('<li>').text(report);
+            // Set animation delay using CSS variable
+            item.css('--index', index);
+
             item.click(function() {
                 // Remove previous selection
                 $('.reports-list li').removeClass('selected');
@@ -399,6 +451,82 @@ $(document).ready(function() {
         });
 
         container.append(list);
+
+        // Add details container
+        const detailsContainer = $('<div id="report-details-container"></div>');
+        container.append(detailsContainer);
+
+        // Scroll to reports container
+        $('html, body').animate({
+            scrollTop: container.offset().top - 20
+        }, 500);
+    }
+
+    // Function to display all reports grouped by automation level
+    function displayAllReports() {
+        const container = $('#reports-list-container');
+        container.empty();
+
+        // Create section title
+        const sectionTitle = $('<h3>').text('All Reports by Automation Level');
+        container.append(sectionTitle);
+
+        // Get automation levels and their reports
+        const automationLevels = [
+            { name: 'Fully', class: 'fully-heading', reports: [] },
+            { name: 'Semi', class: 'semi-heading', reports: [] },
+            { name: 'Tableau', class: 'tableau-heading', reports: [] },
+            { name: 'Manual', class: 'manual-heading', reports: [] }
+        ];
+
+        // Find reports for each level
+        automationLevels.forEach(level => {
+            for (const nodeIndex in nodeData) {
+                if (nodeData[nodeIndex] === level.name) {
+                    level.reports = nodeReports[nodeIndex] || [];
+                    break;
+                }
+            }
+        });
+
+        let anyReports = false;
+
+        // Create a section for each automation level that has reports
+        automationLevels.forEach(level => {
+            if (level.reports.length > 0) {
+                anyReports = true;
+
+                // Create category container
+                const categoryDiv = $('<div class="reports-category"></div>');
+                const levelTitle = $(`<h4 class="${level.class}">${level.name} Reports (${level.reports.length})</h4>`);
+                categoryDiv.append(levelTitle);
+
+                // Create reports list
+                const list = $('<ul class="reports-list"></ul>');
+                level.reports.forEach((report, index) => {
+                    const item = $(`<li class="${level.name.toLowerCase()}-marker"></li>`).text(report);
+                    // Set animation delay using CSS variable
+                    item.css('--index', index);
+
+                    item.click(function() {
+                        // Remove previous selection
+                        $('.reports-list li').removeClass('selected');
+                        // Add selection to current item
+                        $(this).addClass('selected');
+                        // Show details
+                        showReportDetails(report, item);
+                    });
+                    list.append(item);
+                });
+
+                categoryDiv.append(list);
+                container.append(categoryDiv);
+            }
+        });
+
+        if (!anyReports) {
+            container.append($('<p>').text('No reports found'));
+        }
 
         // Add details container
         const detailsContainer = $('<div id="report-details-container"></div>');
